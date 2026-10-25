@@ -21,7 +21,13 @@ namespace dxvk::sync {
   void spin(uint32_t spinCount, const Fn& fn) {
     while (unlikely(!fn())) {
       for (uint32_t i = 1; i < spinCount; i++) {
+        #ifdef DXVK_ARCH_X86
         _mm_pause();
+        #elif defined(_MSC_VER)
+        __yield();
+        #else
+        __asm__ __volatile__("yield");
+        #endif
         if (fn())
           return;
       }

@@ -4867,9 +4867,10 @@ namespace dxvk {
 
     // Round to nearest
     _controlfp(_RC_NEAR, _MCW_RC);
-#elif (defined(__GNUC__) || defined(__MINGW32__)) && (defined(__i386__) || defined(__x86_64__) || defined(__ia64))
+#elif (defined(__GNUC__) || defined(__MINGW32__)) && (defined(__i386__) || defined(__x86_64__) || defined(__ia64)) && !defined(__arm64ec__)
     // For GCC/MinGW we can use inline asm to set it.
-    // This only works for x86 and x64 processors however.
+    // This only works for x86 and x64 processors however: ARM64EC code is arm64,
+    // and can't reach the x87 state of the emulated x86 program.
 
     uint16_t control;
 

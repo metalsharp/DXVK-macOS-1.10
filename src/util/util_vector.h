@@ -151,10 +151,16 @@ namespace dxvk {
 
   inline Vector4 replaceNaN(Vector4 a) {
     Vector4 result;
+    #ifdef DXVK_ARCH_X86
     __m128 value = _mm_load_ps(a.data);
     __m128 mask  = _mm_cmpeq_ps(value, value);
            value = _mm_and_ps(value, mask);
     _mm_store_ps(result.data, value);
+    #else
+    // a NaN compares unequal to itself, and becomes 0 as the SSE mask makes it
+    for (uint32_t i = 0; i < 4; i++)
+      result.data[i] = a.data[i] == a.data[i] ? a.data[i] : 0.0f;
+    #endif
     return result;
   }
 

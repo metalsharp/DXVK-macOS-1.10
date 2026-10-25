@@ -1,6 +1,14 @@
 #pragma once
 
+// x86 intrinsics and asm are only for x86 code: an ARM64EC build (x86_64 programs on arm64 Wine,
+// part of an ARM64X DLL) is arm64 code, and takes the portable paths
+#if (defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || defined(_M_IX86)) && \
+    !defined(__arm64ec__) && !defined(_M_ARM64EC)
+#define DXVK_ARCH_X86
+#endif
+
 #ifndef _MSC_VER
+#ifdef DXVK_ARCH_X86
 #if defined(__WINE__) && defined(__clang__)
 #pragma push_macro("_WIN32")
 #undef _WIN32
@@ -8,6 +16,7 @@
 #include <x86intrin.h>
 #if defined(__WINE__) && defined(__clang__)
 #pragma pop_macro("_WIN32")
+#endif
 #endif
 #else
 #include <intrin.h>
@@ -56,6 +65,8 @@ namespace dxvk::bit {
     return _tzcnt_u32(n);
     #elif defined(__BMI__)
     return __tzcnt_u32(n);
+    #elif (defined(__GNUC__) || defined(__clang__)) && !defined(DXVK_ARCH_X86)
+    return n != 0 ? __builtin_ctz(n) : 32;
     #elif defined(__GNUC__) || defined(__clang__)
     uint32_t res;
     uint32_t tmp;
@@ -145,7 +156,7 @@ namespace dxvk::bit {
   template<typename T>
   bool bcmpeq(const T* a, const T* b) {
     static_assert(alignof(T) >= 16);
-    #if defined(__GNUC__) || defined(__clang__) || defined(_MSC_VER)
+    #if defined(DXVK_ARCH_X86) && (defined(__GNUC__) || defined(__clang__) || defined(_MSC_VER))
     auto ai = reinterpret_cast<const __m128i*>(a);
     auto bi = reinterpret_cast<const __m128i*>(b);
 
